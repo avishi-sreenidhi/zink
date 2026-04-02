@@ -12,7 +12,7 @@ setup(
     ),
     long_description_content_type="text/markdown",
     author="Avishi Sreenidhi",
-    license="MIT",
+    license="Apache-2.0",
     url="https://github.com/avishi/zink",
     project_urls={
         "Documentation": "https://github.com/avishi/zink#readme",
@@ -21,7 +21,7 @@ setup(
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
-        "License :: OSI Approved :: MIT License",
+        "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
