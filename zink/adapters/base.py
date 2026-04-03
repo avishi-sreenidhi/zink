@@ -43,3 +43,24 @@ def create_governed_callable(tool, engine: ZinkEngine, agent_name: str, context_
 
     #return a function that remembers its context.
     return governed
+
+def create_governed_fn(fn, engine:ZinkEngine, agent_name:str, context_fn = None):
+    """Wraps a plain python callable with Zink"""
+    def governed(**kwargs):
+        context = context_fn() if context_fn else {}
+        request = ValidationRequest(
+            agent = agent_name,
+            action="invoke",
+            resource= fn.__name__,
+            params=kwargs,
+            context= context
+        )
+
+        result = engine.validate(request)
+        _append_trace(agent_name, fn.__name__, result)
+        if result.approval:
+            return fn(**kwargs)
+        raise PermissionError(result.reason)
+    
+    governed.__name__ = fn.__name__
+    return governed
