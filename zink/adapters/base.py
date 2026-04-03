@@ -1,3 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+"""
+zink/adapters/base.py
+---------------------
+Framework-agnostic governed callable.
+Wraps any tool with Zink enforcement.
+
+Flow:
+    1. Build ValidationRequest from params + context
+    2. engine.validate(request)         — pre-execution gates
+    3. tool.invoke(params)              — tool fires if approved
+    4. engine.post_execute(request, outcome)  — stateful write-back
+    5. output_scanner.scan(outcome)     — L2 on return value
+    6. audit_logger.write(...)          — always, Merkle-chained
+    7. return outcome to agent
+"""
 import json
 import os
 from datetime import datetime
