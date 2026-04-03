@@ -14,7 +14,7 @@ from zink.schemas import (
     build_result,
 )
 from zink.engine import ZinkEngine
-from zink.adapters import GovernedTool
+from zink.adapters.base import create_governed_fn
 
 __all__ = [
     "load_agent_config",
@@ -28,8 +28,7 @@ __all__ = [
     "LayerResult",
     "ValidationResult",
     "build_result",
-    "ZinkEngine",
-    "GovernedTool"
+    "ZinkEngine"
 ]
 
 class Zink:
@@ -55,16 +54,27 @@ class Zink:
             raise ConfigError(f"Multiple config files found in {config_dir} - expected exaclty one.")
         self._domain_config_path= domain_configs[0]
 
-    def govern(self, agent_name: str, tools: list, context: Optional[Callable] = None) -> list:
-        agent_config_path = self._config_dir / "agents" / f"{agent_name}.yaml"
-
-        if not agent_config_path.exists():
-            raise ConfigError(f"No config found for agent '{agent_name}' — "
-                f"expected {agent_config_path}")
-        
-        cfg = load_agent_config(agent_config_path)
+    def govern(self, agent_name: str, tools: list, context = None) -> list:
+        """Returns plain governed callables. Works with bare pip install zink"""
+        cfg = self._load_agent_cfg(agent_name)
         engine = ZinkEngine(cfg)
+        return [create_governed_fn(tool, engine,agent_name, context_fn=context)for tool in tools]
+    
+    def govern_langchain(self, agent_name: str, tools: list, context=None) -> list:
+        """Returns GovernedTool (BaseTool) wrappers. Requires pip install zink[langchain]."""
+        try:
+            from zink.adapters.langchain import GovernedTool
+        except ImportError:
+            raise ImportError(
+                "LangChain adapter requires: pip install zink[langchain]"
+            )
+        cfg = self._load_agent_cfg(agent_name)
+        engine = ZinkEngine(cfg)
+        return [GovernedTool(tool, engine, agent_name, context_fn=context) for tool in tools]
+    
+    def _load_agent_cfg(self, agent_name:str):
+        agent_config_path = self._config_dir/"agents"/f"{agent_name}.yaml"
+        if not agent_config_path.exists():
+            raise ConfigError(f"No config found for agent '{agent_name}' — expected {agent_config_path}")
+        return load_agent_config(agent_config_path)
         
-        return [
-            GovernedTool(tool,engine, agent_name, context_fn=context) for tool in tools
-        ]
