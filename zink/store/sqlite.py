@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS audit_log (
     ts          TEXT    NOT NULL,
     agent       TEXT    NOT NULL,
     resource    TEXT    NOT NULL,
+    params      TEXT,
     approved    INTEGER NOT NULL,
     reason      TEXT,
     caller      TEXT,
