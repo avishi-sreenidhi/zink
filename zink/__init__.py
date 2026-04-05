@@ -1,80 +1,84 @@
-from pathlib import Path
-from typing import Callable, Optional
-from zink.config.loader import load_agent_config
-from zink.config.parser import ConfigError
-from zink.schemas import (
-    AgentConfig,
-    ScopeEntry,
-    DeniedEntry,
-    Constraint,
-    ValidationRequest,
-    LayerStatus,
-    LayerResult,
-    ValidationResult,
-    build_result,
-)
-from zink.engine import ZinkEngine
-from zink.adapters.base import create_governed_fn
+# SPDX-License-Identifier: Apache-2.0
+"""
+zink/__init__.py
+----------------
+Public API surface.
 
-__all__ = [
-    "load_agent_config",
-    "ConfigError",
-    "AgentConfig",
-    "ScopeEntry",
-    "DeniedEntry",
-    "Constraint",
-    "ValidationRequest",
-    "LayerStatus",
-    "LayerResult",
-    "ValidationResult",
-    "build_result",
-    "ZinkEngine"
-]
+    from zink import Zink
+
+    zink = Zink()
+    tool = zink.govern("agent_name", "path/to/config.yaml")(my_tool)
+    tool = zink.govern_langchain("agent_name", "path/to/config.yaml", lc_tool)
+"""
+
+import os
+from typing import Callable
+
+from zink.config.loader import load_agent_config
+from zink.store.sqlite import ZinkStore
+from zink.engine import ZinkEngine
+from zink.adapters.base import create_governed_callable
+
 
 class Zink:
-    """
-    Single entry point. Developer imports only this.
-    
-    Usage:
-        zink = Zink("./configs/")
-        governed_tools = zink.govern(
-            "screening_agent",
-            [extract_resume, score_candidate],
-            context=lambda: {"hour": datetime.now().hour}
+
+    def __init__(self, store_path: str | None = None) -> None:
+        self._store_path = (
+            store_path
+            or os.getenv("ZINK_STORE_PATH", "zink_store.db")
         )
-    """
 
-    def __init__(self, config_dir: str):
-        self._config_dir = Path(config_dir)
+    def govern(
+        self,
+        agent_name: str,
+        config_path: str,
+        context_fn: Callable[[], dict] | None = None,
+    ) -> Callable:
+        """
+        Returns a decorator that wraps any callable.
 
-        domain_configs = list(self._config_dir.glob("*.zink.yaml"))
-        if not domain_configs:
-            raise ConfigError(f"No domain config found in {config_dir} — expected a *.zink.yaml file")
-        if len(domain_configs)>1:
-            raise ConfigError(f"Multiple config files found in {config_dir} - expected exaclty one.")
-        self._domain_config_path= domain_configs[0]
+        Usage:
+            @zink.govern("agent", "config.yaml")
+            def my_tool(**kwargs): ...
 
-    def govern(self, agent_name: str, tools: list, context = None) -> list:
-        """Returns plain governed callables. Works with bare pip install zink"""
-        cfg = self._load_agent_cfg(agent_name)
-        engine = ZinkEngine(cfg)
-        return [create_governed_fn(tool, engine,agent_name, context_fn=context)for tool in tools]
-    
-    def govern_langchain(self, agent_name: str, tools: list, context=None) -> list:
-        """Returns GovernedTool (BaseTool) wrappers. Requires pip install zink[langchain]."""
-        try:
-            from zink.adapters.langchain import GovernedTool
-        except ImportError:
-            raise ImportError(
-                "LangChain adapter requires: pip install zink[langchain]"
+            # or:
+            my_tool = zink.govern("agent", "config.yaml")(my_tool)
+        """
+        cfg = load_agent_config(config_path)
+        store = ZinkStore(self._store_path)
+        engine = ZinkEngine(cfg, store)
+
+        def decorator(fn: Callable) -> Callable:
+            return create_governed_callable(
+                fn=fn,
+                engine=engine,
+                agent_name=agent_name,
+                resource_name=fn.__name__,
+                context_fn=context_fn,
             )
-        cfg = self._load_agent_cfg(agent_name)
-        engine = ZinkEngine(cfg)
-        return [GovernedTool(tool, engine, agent_name, context_fn=context) for tool in tools]
-    
-    def _load_agent_cfg(self, agent_name:str):
-        agent_config_path = self._config_dir/"agents"/f"{agent_name}.yaml"
-        if not agent_config_path.exists():
-            raise ConfigError(f"No config found for agent '{agent_name}' — expected {agent_config_path}")
-        return load_agent_config(agent_config_path)
-        
+
+        return decorator
+
+    def govern_langchain(
+        self,
+        agent_name: str,
+        config_path: str,
+        tool,
+        context_fn: Callable[[], dict] | None = None,
+    ):
+        """
+        Wraps a LangChain BaseTool with Zink enforcement.
+        Lazy import — langchain_core only imported if this method is called.
+        """
+        from zink.adapters.langchain import GovernedTool
+
+        cfg = load_agent_config(config_path)
+        store = ZinkStore(self._store_path)
+        engine = ZinkEngine(cfg, store)
+
+        return GovernedTool(
+            tool=tool,
+            engine=engine,
+            agent_name=agent_name,
+            context_fn=context_fn,
+        )
