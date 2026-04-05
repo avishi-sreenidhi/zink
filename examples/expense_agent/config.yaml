@@ -1,0 +1,81 @@
+# SPDX-License-Identifier: Apache-2.0
+# expense_agent.zink.yaml
+# -----------------------
+# Governs an autonomous expense approval agent.
+# Covers: identity, injection, scope, policy, memory, audit
+
+agent: expense_agent
+role: expense_approver
+trust_level: medium
+
+default_layers:
+  - l1_identity
+  - l2_injection
+  - l4_memory
+  - l6_policy
+  - l9_scope
+
+identity:
+  require_caller: true
+  allowed_callers:
+    - expense_system
+    - hr_portal
+
+denied:
+  - action: invoke
+    resource: access_payroll
+  - action: invoke
+    resource: access_salary_bands
+  - action: invoke
+    resource: wire_transfer
+
+scope:
+  - action: invoke
+    resource: approve_expense
+    constraints:
+      - param: amount
+        operator: lte
+        value: 5000
+      - param: category
+        operator: in
+        value: [travel, meals, equipment, software, training]
+    dedup:
+      identity_params: [expense_id]
+      ttl_seconds: 86400
+
+  - action: invoke
+    resource: reject_expense
+    constraints:
+      - param: expense_id
+        operator: exists
+        value: true
+
+  - action: invoke
+    resource: request_clarification
+    constraints:
+      - param: expense_id
+        operator: exists
+        value: true
+
+  - action: invoke
+    resource: access_receipts
+    constraints:
+      - param: expense_id
+        operator: exists
+        value: true
+
+policies:
+  - rule: business_hours
+    when: "context.hour < 8 OR context.hour > 18"
+    then: block
+    reason: "Expense approvals only permitted 8am–6pm"
+
+  - rule: weekend_block
+    when: "context.weekday >= 5"
+    then: block
+    reason: "Expense approvals not permitted on weekends"
+
+rate_limits:
+  - resource: approve_expense
+    limit: 20
+    window_seconds: 3600
