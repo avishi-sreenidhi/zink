@@ -3,80 +3,73 @@
 zink/adapters/base.py
 ---------------------
 Framework-agnostic governed callable.
-Wraps any tool with Zink enforcement.
+
+Wraps any callable with Zink enforcement.
+Returns a plain Python callable — no framework dependency.
 
 Flow:
-    1. Build ValidationRequest from params + context
-    2. engine.validate(request)         — pre-execution gates
-    3. tool.invoke(params)              — tool fires if approved
-    4. engine.post_execute(request, outcome)  — stateful write-back
-    5. output_scanner.scan(outcome)     — L2 on return value
-    6. audit_logger.write(...)          — always, Merkle-chained
-    7. return outcome to agent
+    1. Build ValidationRequest
+    2. engine.validate()          pre-execution gates
+    3. If blocked: audit, raise PermissionError
+    4. tool fires
+    5. engine.post_execute()      stateful write-back
+    6. engine.scan_output()       L2 on return value
+    7. engine.audit()             always, Merkle-chained
+    8. return outcome
 """
-import json
-import os
-from datetime import datetime
-from zink.engine import ZinkEngine
+from typing import Any, Callable
 from zink.schemas import ValidationRequest
+from zink.engine import ZinkEngine
 
-_TRACE_LOG = os.getenv("ZINK_TRACE_LOG", "zink_trace.jsonl")
-
-def _append_trace(agent: str, resource: str, result) -> None:
-    entry = {
-        "ts":       datetime.now().isoformat(),
-        "agent":    agent,
-        "resource": resource,
-        "approved": result.approval,
-        "reason":   result.reason,
-        "layers":   result.layer_trace,
-    }
-    with open(_TRACE_LOG, "a") as f:
-        f.write(json.dumps(entry) + "\n")
-
-def create_governed_callable(tool, engine: ZinkEngine, agent_name: str, context_fn=None):
+def create_governed_callable(
+        fn: Callable,
+        engine: ZinkEngine,
+        agent_name: str,
+        resource_name:str,
+        context_fn: Callable[[], dict] | None = None,
+)-> Callable:
     """
-    Wraps any callable with Zink enforcement.
-    Built once in __init__, called many times.
-    Returns a closure.
+    Closure over: fn, engine, agent_name, resource_name, context_fn.
+    These four names are captured at creation time.
+    The inner function references them on every call.
     """
-
-    def governed(**kwargs):
+    def governed(*args, **kwargs):
+        # build context every call
         context = context_fn() if context_fn else {}
+
         request = ValidationRequest(
-            agent = agent_name,
+            agent= agent_name,
             action= "invoke",
-            resource= tool.name,
-            params= kwargs,
-            context= context
+            resource=resource_name,
+            params = kwargs,
+            context= context,
         )
-
+        #pre execution
         result = engine.validate(request)
-        _append_trace(agent_name, tool.name, result)
-        if result.approval:
-            return tool.invoke(kwargs)
-        raise PermissionError(result.reason)
 
-    #return a function that remembers its context.
+        if not result.approval:
+            engine.audit(request,result,outcome=None)
+            raise PermissionError(result.reason)
+        
+        #tool fires
+        outcome = fn(*args, **kwargs)
+
+        # post-execution write-back
+        engine.post_execute_all(request, outcome)
+
+        # output scan
+        engine.scan_output(outcome, request)
+
+        # audit — always
+        engine.audit(request, result, outcome)
+
+        return outcome
+
     return governed
 
-def create_governed_fn(fn, engine:ZinkEngine, agent_name:str, context_fn = None):
-    """Wraps a plain python callable with Zink"""
-    def governed(**kwargs):
-        context = context_fn() if context_fn else {}
-        request = ValidationRequest(
-            agent = agent_name,
-            action="invoke",
-            resource= fn.__name__,
-            params=kwargs,
-            context= context
-        )
 
-        result = engine.validate(request)
-        _append_trace(agent_name, fn.__name__, result)
-        if result.approval:
-            return fn(**kwargs)
-        raise PermissionError(result.reason)
-    
-    governed.__name__ = fn.__name__
-    return governed
+
+
+
+
+
