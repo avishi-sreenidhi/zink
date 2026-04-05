@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS dedup_hashes (
     agent       TEXT    NOT NULL,
     resource    TEXT    NOT NULL,
     created_at  REAL    NOT NULL,
-    ttl         REAL    NOT NULL
+    expires_at  REAL    NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_dedup_hash ON dedup_hashes(hash);
 
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS rate_counters (
     window_start REAL    NOT NULL,
     count        INTEGER NOT NULL DEFAULT 0
 );
-CREATE INDEX IF NOT EXISTS idx_rate ON rate_counters(agent, resource, window_start);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_rate ON rate_counters(agent, resource, window_start);
 
 CREATE TABLE IF NOT EXISTS audit_log (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,

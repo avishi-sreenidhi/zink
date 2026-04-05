@@ -208,5 +208,4 @@ if __name__ == "__main__":
     print("=" * 60)
     print("Expense Agent — Zink Governance Demo")
     print("=" * 60)
-    for _ in run(stream=False):
-        pass
+    run(stream=False)

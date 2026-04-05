@@ -19,7 +19,10 @@ from zink.schemas import AgentConfig, ValidationRequest, ValidationResult, build
 from zink.store.sqlite import ZinkStore
 from zink.audit.logger import AuditLogger
 from zink.layers.base import Layer
+from zink.layers.l1_identity import IdentityCheck
 from zink.layers.l2_injection import InjectionDetect
+from zink.layers.l4_memory import MemoryGuard
+from zink.layers.l6_policy import PolicyEnforcer
 from zink.layers.l9_scope import ScopeCheck
 
 
@@ -36,10 +39,9 @@ class ZinkEngine:
         registry = {
             "l2_injection": lambda: InjectionDetect(),
             "l9_scope":     lambda: ScopeCheck(self._cfg),
-            # uncomment as you build them:
-            # "l1_identity": lambda: IdentityCheck(self._cfg),
-            # "l6_policy":   lambda: PolicyEnforcer(self._cfg, self._store),
-            # "l4_memory":   lambda: MemoryGuard(self._cfg, self._store),
+            "l1_identity": lambda: IdentityCheck(self._cfg),
+            "l6_policy":   lambda: PolicyEnforcer(self._cfg, self._store),
+            "l4_memory":   lambda: MemoryGuard(self._cfg, self._store),
         }
         from zink.config.parser import ConfigError
         layers = []
