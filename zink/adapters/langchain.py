@@ -18,7 +18,7 @@ class GovernedTool(BaseTool):
             description = tool.description,
             args_schema = tool.args_schema  # type: ignore[arg-type]
         )
-        self._governed_fn = create_governed_callable(tool, engine, agent_name, context_fn)
+        self._governed_fn = create_governed_callable(tool, engine, agent_name, tool.name, context_fn)
 
     def _run(self, **kwargs: Any) -> Any:
         try:
