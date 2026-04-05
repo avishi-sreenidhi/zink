@@ -1,0 +1,95 @@
+# SPDX-License-Identifier: Apache-2.0
+# infra_agent.zink.yaml
+# ----------------------
+# Governs an autonomous AWS infrastructure provisioning agent.
+# Covers: identity, injection, scope, policy, memory, audit
+
+agent: infra_agent
+role: infrastructure_provisioner
+trust_level: medium
+
+default_layers:
+  - l1_identity
+  - l2_injection
+  - l4_memory
+  - l6_policy
+  - l9_scope
+
+identity:
+  require_caller: true
+  allowed_callers:
+    - ci_pipeline
+    - devops_portal
+
+denied:
+  - action: invoke
+    resource: iam.create_role
+  - action: invoke
+    resource: iam.attach_policy
+  - action: invoke
+    resource: iam.delete_role
+  - action: invoke
+    resource: ec2.terminate_all
+  - action: invoke
+    resource: s3.delete_bucket
+
+scope:
+  - action: invoke
+    resource: ec2.launch_instance
+    constraints:
+      - param: instance_type
+        operator: in
+        value: [t3.micro, t3.small, t3.medium]
+      - param: environment
+        operator: neq
+        value: production
+    dedup:
+      identity_params: [instance_name]
+      ttl_seconds: 3600
+
+  - action: invoke
+    resource: ec2.describe_instances
+    constraints:
+      - param: environment
+        operator: exists
+        value: true
+
+  - action: invoke
+    resource: ec2.stop_instance
+    constraints:
+      - param: instance_id
+        operator: exists
+        value: true
+      - param: environment
+        operator: neq
+        value: production
+
+  - action: invoke
+    resource: s3.create_bucket
+    constraints:
+      - param: environment
+        operator: neq
+        value: production
+
+  - action: invoke
+    resource: cloudwatch.get_metrics
+    constraints:
+      - param: service
+        operator: exists
+        value: true
+
+policies:
+  - rule: no_weekend_provisioning
+    when: "context.weekday >= 5"
+    then: block
+    reason: "Infrastructure provisioning not permitted on weekends"
+
+  - rule: business_hours_only
+    when: "context.hour < 7 OR context.hour > 20"
+    then: block
+    reason: "Provisioning only permitted 7am–8pm"
+
+rate_limits:
+  - resource: ec2.launch_instance
+    limit: 10
+    window_seconds: 3600
