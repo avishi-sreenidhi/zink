@@ -96,6 +96,7 @@ class ScopeEntry(BaseModel):
     resource: str
     constraints: list[Constraint] = []
     layers: list[str] = []
+    dedup: DedupConfig | None = None
 
     @field_validator("action", "resource")
     @classmethod
@@ -123,6 +124,18 @@ class DeniedEntry(BaseModel):
             raise ValueError("DeniedEntry fields must not be empty")
         return v.strip()
     
+class IdentityConfig(BaseModel):
+    require_caller: bool = False
+    allowed_callers: list[str] = []
+    
+class RateLimit(BaseModel):
+    resource: str
+    limit: int
+    window_seconds: int = 3600
+
+class DedupConfig(BaseModel):
+    identity_params: list[str]
+    ttl_seconds: int = 86400
 
 class AgentConfig(BaseModel):
     model_config = {"extra": "ignore"}
@@ -136,6 +149,8 @@ class AgentConfig(BaseModel):
     denied:         list[DeniedEntry] = []
     policies: tuple = ()
     injection_patterns: dict = {}
+    identity: IdentityConfig = IdentityConfig()
+    rate_limits: list[RateLimit]  = []
 
     @field_validator("agent")
     @classmethod
