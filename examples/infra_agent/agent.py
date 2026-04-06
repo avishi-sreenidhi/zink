@@ -18,9 +18,13 @@ Run:
     python -m examples.infra_agent.agent
 """
 
+import os
 import time
 from datetime import datetime
 from zink import Zink
+
+CONFIG = os.path.join(os.path.dirname(__file__), 'config.yaml')
+STORE_PATH = "zink_infra.db"
 
 
 # ── Tool implementations ───────────────────────────────────────────────────────
@@ -147,7 +151,11 @@ def run(stream=False):
     stream=False  — prints trace to stdout
     stream=True   — yields trace dicts for WebSocket
     """
-    zink = Zink(store_path="zink_infra.db")
+    if os.path.exists(STORE_PATH):
+        if time.time() - os.path.getmtime(STORE_PATH) > 3600:
+            os.remove(STORE_PATH)
+
+    zink = Zink(store_path=STORE_PATH)
 
     now = datetime.now()
     context_fn = lambda: {
@@ -159,8 +167,9 @@ def run(stream=False):
     tools = {
         name: zink.govern(
             "infra_agent",
-            "examples/cloud_infra_agent/config.yaml",
+            CONFIG,
             context_fn,
+            resource_name=name,
         )(fn)
         for name, fn in TOOL_FNS.items()
     }
@@ -206,4 +215,5 @@ if __name__ == "__main__":
     print("=" * 60)
     print("Infra Agent — Zink Governance Demo")
     print("=" * 60)
-    run(stream=False)
+    for _ in run(stream=False):
+        pass
