@@ -1,6 +1,7 @@
 from pathlib import Path
 from zink.config.parser import load_yaml, ConfigError
 from zink.schemas import AgentConfig, DeniedEntry
+from zink.layers.condition_parser import parse_condition
 
 VALID_TRUST_LEVELS = {"low", "medium", "high"}
 VALID_ON_UNKNOWNS  = {"block", "allow", "flag"}
@@ -21,6 +22,15 @@ def load_agent_config(path: str | Path, _seen=None, _depth=0) -> AgentConfig:
     _seen.add(resolved)
 
     raw = load_yaml(path)
+
+    if "policies" in raw and raw["policies"]:
+        parsed_policies = []
+        for policy in raw["policies"]:
+            if isinstance(policy, dict) and isinstance(policy.get("when"), str):
+                policy = {**policy, "when": parse_condition(policy["when"])}
+            parsed_policies.append(policy)
+        raw["policies"] = tuple(parsed_policies)
+
     agent_cfg = AgentConfig(**raw)
 
     if agent_cfg.extends:

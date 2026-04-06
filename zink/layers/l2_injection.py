@@ -30,27 +30,27 @@ class InjectionDetect(Layer):
 
         self._patterns = [re.compile(pattern, re.IGNORECASE) for pattern in default_patterns]
 
-    def evaluate(self, request: ValidationRequest)-> LayerResult:
-        text = request.context.get(self._context_field)
+    def evaluate(self, request: ValidationRequest) -> LayerResult:
+        texts = []
 
-        if not text:
-            return LayerResult(
-                status= LayerStatus.PASS,
-                layer = self.name,
-            )
+        ctx_text = request.context.get(self._context_field)
+        if ctx_text:
+            texts.append(ctx_text)
 
-        for pattern in self._patterns:
-            if pattern.search(text):
-                return LayerResult(
-                    status= LayerStatus.BLOCK,
-                    layer= self.name,
-                    reason = f"Injection pattern detected: '{pattern.pattern}'"
-                )
-        
-        return LayerResult(
-            status = LayerStatus.PASS,
-            layer=self.name
-        )
+        for val in request.params.values():
+            if isinstance(val, str):
+                texts.append(val)
+
+        for text in texts:
+            for pattern in self._patterns:
+                if pattern.search(text):
+                    return LayerResult(
+                        status=LayerStatus.BLOCK,
+                        layer=self.name,
+                        reason=f"Injection pattern detected: '{pattern.pattern}'"
+                    )
+
+        return LayerResult(status=LayerStatus.PASS, layer=self.name)
 
     
     

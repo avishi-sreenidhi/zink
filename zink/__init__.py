@@ -33,6 +33,7 @@ class Zink:
         agent_name: str,
         config_path: str,
         context_fn: Callable[[], dict] | None = None,
+        resource_name: str | None = None,
     ) -> Callable:
         """
         Returns a decorator that wraps any callable.
@@ -43,6 +44,9 @@ class Zink:
 
             # or:
             my_tool = zink.govern("agent", "config.yaml")(my_tool)
+
+            # with explicit resource name (e.g. dot-notation keys):
+            my_tool = zink.govern("agent", "config.yaml", resource_name="ec2.launch_instance")(fn)
         """
         cfg = load_agent_config(config_path)
         store = ZinkStore(self._store_path)
@@ -53,7 +57,7 @@ class Zink:
                 fn=fn,
                 engine=engine,
                 agent_name=agent_name,
-                resource_name=fn.__name__,
+                resource_name=resource_name or fn.__name__,
                 context_fn=context_fn,
             )
 

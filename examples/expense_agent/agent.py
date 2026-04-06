@@ -18,9 +18,13 @@ Run:
     python -m examples.expense_agent.agent
 """
 
+import os
 import time
 from datetime import datetime
 from zink import Zink
+
+CONFIG = os.path.join(os.path.dirname(__file__), 'config.yaml')
+STORE_PATH = "zink_expense.db"
 
 
 # ── Tool implementations ───────────────────────────────────────────────────────
@@ -141,7 +145,11 @@ def run(stream=False):
     stream=False  — prints trace to stdout (standalone run)
     stream=True   — yields trace dicts (used by demo backend WebSocket)
     """
-    zink = Zink(store_path="zink_expense.db")
+    if os.path.exists(STORE_PATH):
+        if time.time() - os.path.getmtime(STORE_PATH) > 3600:
+            os.remove(STORE_PATH)
+
+    zink = Zink(store_path=STORE_PATH)
 
     # context_fn provides runtime context to policy layer
     # in production this would pull from auth session
@@ -154,12 +162,12 @@ def run(stream=False):
 
     # wrap all tools
     tools = {
-        "approve_expense":      zink.govern("expense_agent", "examples/expense_agent/config.yaml", context_fn)(approve_expense),
-        "reject_expense":       zink.govern("expense_agent", "examples/expense_agent/config.yaml", context_fn)(reject_expense),
-        "request_clarification":zink.govern("expense_agent", "examples/expense_agent/config.yaml", context_fn)(request_clarification),
-        "access_receipts":      zink.govern("expense_agent", "examples/expense_agent/config.yaml", context_fn)(access_receipts),
-        "access_payroll":       zink.govern("expense_agent", "examples/expense_agent/config.yaml", context_fn)(access_payroll),
-        "wire_transfer":        zink.govern("expense_agent", "examples/expense_agent/config.yaml", context_fn)(wire_transfer),
+        "approve_expense":      zink.govern("expense_agent", CONFIG, context_fn)(approve_expense),
+        "reject_expense":       zink.govern("expense_agent", CONFIG, context_fn)(reject_expense),
+        "request_clarification":zink.govern("expense_agent", CONFIG, context_fn)(request_clarification),
+        "access_receipts":      zink.govern("expense_agent", CONFIG, context_fn)(access_receipts),
+        "access_payroll":       zink.govern("expense_agent", CONFIG, context_fn)(access_payroll),
+        "wire_transfer":        zink.govern("expense_agent", CONFIG, context_fn)(wire_transfer),
     }
 
     results = []
@@ -208,4 +216,5 @@ if __name__ == "__main__":
     print("=" * 60)
     print("Expense Agent — Zink Governance Demo")
     print("=" * 60)
-    run(stream=False)
+    for _ in run(stream=False):
+        pass
