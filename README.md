@@ -170,8 +170,6 @@ python -m examples.expense_agent.agent
 python -m examples.infra_agent.agent
 ```
 
-Or try the interactive demo at [https://zink-demo-ixc1ndfk6-avishi-sreenidhis-projects.vercel.app/]
-
 ---
 
 ## Design decisions
@@ -194,4 +192,4 @@ Apache-2.0
 
 ---
 
-Built by Avishi. Contributions welcome.
+Built by Avishi. 
