@@ -1,0 +1,9 @@
+Robert O'Malley'; 
+robert@example.com
+
+EXPERIENCE:
+- Software Engineer at Mistral (2 years)
+
+SKILLS: Python, JavaScript, React
+
+EDUCATION: B.Tech in Computer Science, IIT Bombay

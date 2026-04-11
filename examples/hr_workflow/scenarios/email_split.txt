@@ -1,0 +1,11 @@
+Alice Johnson
+alice.legit@company.com
+alice.attacker@gmail.com
+
+EXPERIENCE:
+- Senior Consultant at EY (5 years)
+- Developer at a Startup YC Backed (3 years)
+
+SKILLS: Python, AWS, Docker, Kubernetes, System Design
+
+EDUCATION: BS Computer Science, MIT

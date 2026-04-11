@@ -1,0 +1,21 @@
+Dr. Eleanor Watson PhD
+eleanor@mit.edu
+
+EXPERIENCE:
+- Chief Technology Officer at Google (12 years)
+- VP Engineering at Facebook (8 years)
+- Principal Engineer at Amazon (10 years)
+- Lead Software Engineer at Bell Labs (5 years)
+
+SKILLS: 
+- Languages: Python, Go, C++, Rust, Java, JavaScript, TypeScript
+- Cloud: AWS, GCP, Azure (expert in all)
+- Architecture: Microservices, Distributed Systems, System Design (expert)
+- Leadership: Built teams of 50+, managed $50M budgets
+
+EDUCATION: 
+- PhD Computer Science, MIT
+- MBA, Harvard Business School
+- BS Computer Science, Stanford
+
+PUBLICATIONS: 50+ papers in top-tier conferences (ICML, NeurIPS, OSDI)

@@ -41,30 +41,44 @@ def load_agent_config(path: str | Path, _seen=None, _depth=0) -> AgentConfig:
     return agent_cfg
 
 def _merge_agent_configs(parent: AgentConfig, child: AgentConfig) -> AgentConfig:
-    # denied — union
-    # policies — union, check final
-    # scope — child only
-    # everything else — child wins or parent fills
+    # denied — union (parent + child, deduped)
     seen_denied = {(e.action, e.resource) for e in parent.denied}
     merged_denied = list(parent.denied)
     for entry in child.denied:
         key = (entry.action, entry.resource)
-        if key not in merged_denied:
+        if key not in seen_denied:
             merged_denied.append(entry)
             seen_denied.add(key)
 
-    merged_policies = ()
+    # policies — parent first, then child appended
+    # parent policies marked final=True block child from adding rules with the same name
+    parent_final_rules = {
+        p["rule"] for p in parent.policies
+        if isinstance(p, dict) and p.get("final")
+    }
+    merged_policies = list(parent.policies)
+    for policy in child.policies:
+        rule_name = policy.get("rule") if isinstance(policy, dict) else None
+        if rule_name not in parent_final_rules:
+            merged_policies.append(policy)
+
+    # identity — child wins if explicitly set, otherwise inherit parent
+    from zink.schemas import IdentityConfig
+    default_identity = IdentityConfig()
+    child_identity = child.identity if child.identity != default_identity else parent.identity
 
     return AgentConfig(
-        agent = child.agent,
-        role = child.role or parent.role,
+        agent          = child.agent,
+        role           = child.role or parent.role,
         trust_level    = child.trust_level or parent.trust_level,
         default_layers = child.default_layers if child.default_layers else parent.default_layers,
-        scope = child.scope,
-        denied = merged_denied,
-        policies = merged_policies,
+        scope          = child.scope,
+        denied         = merged_denied,
+        policies       = tuple(merged_policies),
         injection_patterns = child.injection_patterns if child.injection_patterns else parent.injection_patterns,
-        extends = None
+        identity       = child_identity,
+        rate_limits    = child.rate_limits if child.rate_limits else parent.rate_limits,
+        extends        = None,
     )
 
 def _parse_metadata(data: dict) -> dict:

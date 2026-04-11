@@ -1,0 +1,31 @@
+domain: "HR"
+version: "0.1"
+
+defaults:
+  trust_level: low
+  default_layers: [l1_identity, l6_policy, l9_scope]
+  decision_on_unknowns: block
+
+denied:
+  - action: invoke
+    resource: payment.*
+  - action: invoke
+    resource: iam.*
+  - action: invoke
+    resource: sys.*
+  - action: invoke
+    resource: os.*
+  - action: invoke
+    resource: admin.*
+
+policies:
+  - rule: no_iam_modification
+    when: "resource matches iam.*"
+    then: block
+    reason: "IAM changes require human approval"
+    final: true
+
+  - rule: business_hours
+    when: "context.hour < 9 OR context.hour > 18 "
+    then: block
+    reason: "HR actions restricted to business hours"

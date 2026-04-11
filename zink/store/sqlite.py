@@ -100,6 +100,45 @@ class ZinkStore:
             cur = self._conn.execute(sql,params)
             self._conn.commit()
             return cur
+
+    def write_audit_entry(
+        self,
+        ts: str,
+        agent: str,
+        resource: str,
+        params_str: str,
+        approved: int,
+        reason: str | None,
+        caller: str | None,
+        layer_trace_str: str,
+        outcome_str: str | None,
+        fingerprint: str,
+    ) -> None:
+        """
+        Atomically read the last entry_hash, compute the new entry_hash,
+        and insert the audit row — all inside one lock acquisition.
+
+        This prevents chain corruption when multiple ZinkEngine instances
+        share the same store (e.g. multiple agents in one process).
+        """
+        import hashlib
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT entry_hash FROM audit_log ORDER BY id DESC LIMIT 1"
+            ).fetchone()
+            prev_hash = row["entry_hash"] if row else "0" * 64
+            entry_hash = hashlib.sha256((prev_hash + fingerprint).encode()).hexdigest()
+            self._conn.execute(
+                """
+                INSERT INTO audit_log
+                    (ts, agent, resource, params, approved, reason, caller,
+                     layer_trace, outcome, entry_hash, prev_hash)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (ts, agent, resource, params_str, approved, reason, caller,
+                 layer_trace_str, outcome_str, entry_hash, prev_hash),
+            )
+            self._conn.commit()
     
     def query(self, sql: str, params: tuple = ()) -> list[sqlite3.Row]:
         """Read operation — no lock needed in WAL mode."""

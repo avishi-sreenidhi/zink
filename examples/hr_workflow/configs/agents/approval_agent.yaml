@@ -1,0 +1,36 @@
+agent: approval_agent
+extends: ../hr.zink.yaml
+role: approver
+trust_level: medium
+default_layers: [l9_scope]
+
+scope:
+  - action: invoke
+    resource: generate_offer
+    constraints:
+      - param: candidate_email
+        operator: neq
+        value: unknown@gexample.com 
+
+      - param: candidate_email
+        operator: neq
+        value: null
+
+      - param: salary
+        operator: gte
+        value: 50000
+        
+      - param: salary
+        operator: lte
+        value: 300000
+
+  - action: invoke
+    resource: log_offer_to_excel
+
+  - action: invoke
+    resource: send_offer_email
+
+  - action: invoke
+    resource: send_rejection_email
+  
+

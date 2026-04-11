@@ -1,0 +1,53 @@
+agent: screening_agent
+extends: ../hr.zink.yaml
+role: screener
+trust_level: high
+default_layers: [l2_injection, l9_scope]
+
+# L2 
+injection_patterns:
+  custom:
+    - "(?i)ignore (all )?previous instructions"
+    - "(?i)system override"
+    - "(?i)developer mode"
+    - "(?i)prompt injection"
+    - "(?i)(must|should)\\s+approve\\s+this\\s+candidate"
+    - "(?i)approve\\s+all\\s+without"
+    - "(?i)do\\s+not\\s+consider\\s+(qualifications|experience|skills)"
+    - "(?i)set\\s+score\\s+to\\s+[0-9]"
+    - "(?i)(give|assign).{0,20}(score|rating)\\s+of"
+    - "(?i)without\\s+(any\\s+)?(further\\s+)?evaluation"
+
+scope:
+  - action: invoke
+    resource: extract_resume
+
+  - action: invoke
+    resource: score_candidate
+    constraints:
+      - param: years_experience
+        operator: gte
+        value: 0
+      - param: name
+        operator: exists
+        value: True
+
+  - action: invoke
+    resource: log_to_excel_tool
+
+  - action: invoke
+    resource: send_email_tool
+
+
+denied: 
+  - action: invoke
+    resource: schedule_interview
+
+  - action: invoke
+    resource: generate_offer
+
+  - action: invoke
+    resource: send_offer_email
+
+  - action: invoke
+    resource: send_rejection_email

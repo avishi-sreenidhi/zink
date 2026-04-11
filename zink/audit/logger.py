@@ -19,62 +19,44 @@ from zink.store.sqlite import ZinkStore
 class AuditLogger:
     def __init__(self, store: ZinkStore)-> None:
         self._store = store
-        self._prev_hash = self._load_last_hash()
 
-    def _load_last_hash(self)-> str:
-        row = self._store.query_one(
-            "SELECT entry_hash FROM audit_log ORDER BY id DESC LIMIT 1"
-        )
-        return row["entry_hash"] if row else "0" * 64
-    
     def write(
             self,
-            request: ValidationRequest, 
+            request: ValidationRequest,
             result: ValidationResult,
             outcome: Any = None
             )-> None:
-        
-        ts = datetime.now(timezone.utc).isoformat() 
+
+        ts = datetime.now(timezone.utc).isoformat()
 
         caller = None
         l1 = result.layer_trace.get("l1_identity")
         if l1 and l1.get("enrichments"):
             caller = l1["enrichments"].get("caller")
-        
-        layer_trace_str= json.dumps(result.layer_trace)
+
+        layer_trace_str = json.dumps(result.layer_trace)
         outcome_str = json.dumps(outcome) if outcome is not None else None
-        params_str = json.dumps(request.params,sort_keys= True)
+        params_str = json.dumps(request.params, sort_keys=True)
 
         fingerprint = json.dumps({
-            "agent": request.agent,
+            "agent":    request.agent,
             "resource": request.resource,
-            "params": request.params,
-            "ts" : ts},
-            sort_keys = True) # to keep the JSON's hash deterministic 
-        
-        entry_hash = hashlib.sha256((self._prev_hash + fingerprint).encode()).hexdigest()
+            "params":   request.params,
+            "ts":       ts,
+        }, sort_keys=True)
 
-        self._store.execute("""
-        INSERT INTO audit_log
-            (ts, agent, resource, params, approved, reason, caller,
-             layer_trace, outcome, entry_hash, prev_hash)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            ts,
-            request.agent,
-            request.resource,
-            params_str,
-            1 if result.approval else 0,
-            result.reason,
-            caller,
-            layer_trace_str,
-            outcome_str,
-            entry_hash,
-            self._prev_hash,
-        ))
-
-        self._prev_hash = entry_hash
+        self._store.write_audit_entry(
+            ts=ts,
+            agent=request.agent,
+            resource=request.resource,
+            params_str=params_str,
+            approved=1 if result.approval else 0,
+            reason=result.reason,
+            caller=caller,
+            layer_trace_str=layer_trace_str,
+            outcome_str=outcome_str,
+            fingerprint=fingerprint,
+        )
 
     def verify_chain(self) -> bool:
         """

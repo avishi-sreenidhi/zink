@@ -1,0 +1,17 @@
+agent: onboarding_agent
+extends: ../hr.zink.yaml
+role: onboarder
+trust_level: medium
+default_layers: [l9_scope]
+
+scope:
+  - action: invoke
+    resource: create_onboarding_tasks
+
+  - action: invoke
+    resource: send_welcome_email
+
+  - action: invoke
+    resource: add_to_hris
+  
+

@@ -1,0 +1,37 @@
+agent: scheduling_agent
+extends: ../hr.zink.yaml
+role: scheduler
+trust_level: medium
+default_layers: [l9_scope]
+
+scope:
+  - action: invoke
+    resource: get_availability
+
+  - action: invoke
+    resource: schedule_interview
+    constraints:
+      - param: candidate_email
+        operator: neq
+        value: unknown@gexample.com 
+
+      - param: candidate_email
+        operator: neq
+        value: null
+
+      - param: date
+        operator: neq
+        value: null
+
+  - action: invoke
+    resource: send_interview_invite
+
+denied: 
+  - action: invoke
+    resource: generate_offer
+
+  - action: invoke
+    resource: send_offer_email
+
+  - action: invoke
+    resource: send_rejection_email

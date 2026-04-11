@@ -1,0 +1,21 @@
+# Zink library - Using local path for development
+zink @ file:///Users/avishi/Desktop/projects-26/zink
+
+# Agent workflows - 2026 Stable Stack
+langchain>=0.3.0
+langgraph>=0.4.0
+langchain-google-genai>=4.2.0    
+google-generativeai>=0.8.0      
+langchain-ollama==1.0.1 
+
+# Data validation
+pydantic>=2.10.0
+
+# HR workflow integrations
+openpyxl>=3.1.5
+google-auth-oauthlib>=1.0.0
+google-auth-httplib2>=0.2.0
+google-api-python-client>=2.150.0
+
+# Environment variables
+python-dotenv>=1.0.0
