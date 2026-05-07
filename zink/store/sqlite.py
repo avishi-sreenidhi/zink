@@ -72,7 +72,7 @@ class ZinkStore:
     WAL mode for concurrent reads.
     """
     def __init__(self, path: str | Path = None):
-        if Path is None:
+        if path is None:
             path = os.getenv("ZINK_STORE_PATH", "zink_store.db")
         self._path = Path(path)
         self._path.parent.mkdir(parents=True, exist_ok=True)

@@ -8,14 +8,13 @@ Core governance pipeline working end-to-end.
 - **L2 Injection** — regex-based prompt injection detection on inputs and outputs
 - **L4 Memory** — deduplication with TTL, idempotency enforcement
 - **L6 Policy** — business rules via AST condition evaluator, rate limiting with stateful counters
-- **L7 Audit** — Merkle-chained tamper-evident log, SQLite-backed
+- **L7 Audit** — SHA-256 chained tamper-evident log, SQLite-backed
 - **L9 Scope** — tool-level permissions + param constraints
 - YAML-driven config with domain → agent inheritance
 - LangChain / LangGraph adapter — zero agent code changes
 - SQLite backing store — shared by all stateful layers
 - `post_execute()` hook — governance after tool success, not just before
 - Output scanner — L2 injection detection on tool return values
-- JSONL audit trace
 
 ---
 
@@ -26,13 +25,8 @@ Behavioral intelligence and the research contribution.
 - **L3 Intent** — semantic coherence of params (score vs decision contradictions)
 - **L5 Data** — field-level ACL, PII stripping, egress control
 - **L8 Anomaly** — behavioral drift detection across sessions, FLAG only
-- **Fingerprint Engine** — 3D threat scoring across temporal, structural, and parametric dimensions using KL divergence + CUSUM + cosine similarity
+- **Fingerprint Engine** — multi-dimensional threat scoring across behavioral dimensions for statistical anomaly detection
 - Dashboard — real-time visibility into governance decisions
-- Paper — targeting SafeAI @ AAAI or IEEE S&P workshop
-
----
-
-## Later — v0.4
 
 Production hardening and multi-process deployment.
 

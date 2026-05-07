@@ -1,19 +1,15 @@
 # Zink
 
-Deterministic runtime governance for AI agents.
+A Middleware that provides deterministic runtime governance for Autonomous agents.
 
 ---
 
 ## Prerequisites
 
 - Python 3.10 or higher
-- For the examples: a Google Gemini API key
+- No LLM required. The governance pipeline is fully deterministic. The included examples simulate agent tool calls directly — no API key needed to run them.
 
-Create a `.env` file in the repo root:
-```
-GOOGLE_API_KEY=your_key_here
-```
-Get a key at: https://aistudio.google.com/app/apikey
+If you wire Zink into a real agent, any LangChain-compatible LLM works (OpenAI, Anthropic, Gemini, Ollama, etc.).
 
 ---
 
@@ -32,12 +28,12 @@ zink = Zink()
 @zink.govern(
     "expense_agent",
     "examples/expense_agent/config.yaml",
-    context=lambda: {"hour": datetime.datetime.now().hour}
+    context=lambda: {"caller_id": "expense_system", "hour": datetime.datetime.now().hour}
 )
 def approve_expense(expense_id: str, amount: float, category: str) -> dict:
     ...  # your implementation here
 
-# now governed. scope enforced. audit logged. that's it.
+# now governed. scope enforced. audit logged. 
 ```
 
 ---
@@ -148,7 +144,7 @@ pip install -e ".[examples]"
 
 Every layer is opt-in. Start with two. Add more when you need them.
 
-> Layer numbers follow a fixed nine-position governance taxonomy. L3 Intent, L5 Data, and L8 Anomaly are on the roadmap — gaps are intentional, not missing. See [ROADMAP.md](ROADMAP.md) for what's planned.
+> Layer numbers follow a fixed nine-position governance taxonomy. L3 Intent, L5 Data, and L8 Anomaly are on the roadmap. Gaps are intentional, not missing. See [ROADMAP.md](ROADMAP.md) for what's planned.
 
 ---
 
@@ -184,6 +180,8 @@ Run either from the project root:
 python -m examples.expense_agent.agent
 python -m examples.infra_agent.agent
 ```
+
+The examples persist state in SQLite. If you re-run within an hour, the dedup layer will block requests it saw before. Delete `zink_expense.db` or `zink_infra.db` to reset.
 
 ---
 
