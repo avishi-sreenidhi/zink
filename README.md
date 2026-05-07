@@ -4,6 +4,19 @@ Deterministic runtime governance for AI agents.
 
 ---
 
+## Prerequisites
+
+- Python 3.10 or higher
+- For the examples: a Google Gemini API key
+
+Create a `.env` file in the repo root:
+```
+GOOGLE_API_KEY=your_key_here
+```
+Get a key at: https://aistudio.google.com/app/apikey
+
+---
+
 ## What is this
 
 Zink is a middleware library that sits between an AI agent and the tools it can call. Every time an agent tries to do something, Zink checks whether that action is allowed before it executes. If it's allowed, the tool fires. If it isn't, it's blocked with a clear reason and logged.
@@ -11,20 +24,18 @@ Zink is a middleware library that sits between an AI agent and the tools it can 
 No changes to your agent code. No retraining. One integration point.
 
 ```python
+import datetime
 from zink import Zink
 
 zink = Zink()
 
-# your existing tool, completely unchanged
-def approve_expense(expense_id: str, amount: float, category: str) -> dict:
-    return db.approve(expense_id, amount)
-
-# wrap it
-approve_expense = zink.govern(
+@zink.govern(
     "expense_agent",
-    "configs/expense_agent.yaml",
-    context_fn=lambda: {"caller_id": "expense_system", "hour": datetime.now().hour}
-)(approve_expense)
+    "examples/expense_agent/config.yaml",
+    context=lambda: {"hour": datetime.datetime.now().hour}
+)
+def approve_expense(expense_id: str, amount: float, category: str) -> dict:
+    ...  # your implementation here
 
 # now governed. scope enforced. audit logged. that's it.
 ```
@@ -136,6 +147,8 @@ pip install -e ".[examples]"
 | L9 Scope | Enforces the agent's declared permissions and param constraints |
 
 Every layer is opt-in. Start with two. Add more when you need them.
+
+> Layer numbers follow a fixed nine-position governance taxonomy. L3 Intent, L5 Data, and L8 Anomaly are on the roadmap — gaps are intentional, not missing. See [ROADMAP.md](ROADMAP.md) for what's planned.
 
 ---
 
