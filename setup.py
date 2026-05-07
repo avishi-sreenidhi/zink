@@ -89,9 +89,4 @@ setup(
         ],
     },
 
-    entry_points={
-        "console_scripts": [
-            "zink=zink.cli.main:cli",   # `zink audit`, `zink verify`, etc.
-        ],
-    },
 )

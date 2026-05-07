@@ -106,19 +106,21 @@ Every decision, blocked or approved, is written to a hash-chained audit log. Tam
 ## Install
 
 ```bash
-pip install zink
+git clone https://github.com/avishi-sreenidhi/zink
+cd zink
+pip install -e .
 ```
 
 With LangChain support:
 
 ```bash
-pip install "zink[langchain]"
+pip install -e ".[langchain]"
 ```
 
 For running the examples:
 
 ```bash
-pip install "zink[examples]"
+pip install -e ".[examples]"
 ```
 
 ---
