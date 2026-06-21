@@ -1,3 +1,7 @@
+#### to do 
+In the presented README.md: verify_chain is now surfaced with the verify→tamper→break demonstration and tied to the study; a Governance mapping table is added with the OWASP ASI column and a full/partial/planned coverage column (honest — most of L1/L2/L4 are marked partial); an Empirical study section carries the reproduce command and headline numbers. Plus the two claim fixes (domain line no longer asserts healthcare/finance; "zero agent changes" → "minimal integration"). One thing to verify before submission: confirm the exact OWASP ASI identifiers against the published 2026 list — I flagged that inline in the table.
+
+
 # Zink
 
 A Middleware that provides deterministic runtime governance for Autonomous agents.
