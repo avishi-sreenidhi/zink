@@ -27,8 +27,8 @@ plt.rcParams.update({
 })
 
 LAYER_NAMES = {
-    "identity": "L1 Identity", "injection": "L2 Injection",
-    "scope": "L9 Scope", "policy": "L6 Policy", "memory": "L4 Memory",
+    "identity": "Identity", "injection": "Injection",
+    "scope": "Scope", "policy": "Policy", "memory": "Memory",
 }
 
 # ── Fig 1: which gate caught what ─────────────────────────────────────────────
