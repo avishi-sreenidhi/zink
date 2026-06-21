@@ -53,11 +53,11 @@ agent: expense_agent
 trust_level: medium
 
 default_layers:
-  - l1_identity
-  - l2_injection
-  - l4_memory
-  - l6_policy
-  - l9_scope
+  - identity
+  - injection
+  - scope
+  - policy
+  - memory
 
 scope:
   - action: invoke

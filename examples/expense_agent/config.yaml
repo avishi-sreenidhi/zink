@@ -10,9 +10,9 @@ trust_level: medium
 default_layers:
   - identity
   - injection
-  - memory
-  - policy
   - scope
+  - policy
+  - memory
 
 identity:
   require_caller: true
