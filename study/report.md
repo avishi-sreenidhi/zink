@@ -31,16 +31,16 @@ class Zink is designed to gate, plus valid actions that must pass:
 | Class | Cases | Expected outcome |
 |---|---|---|
 | Valid action | 6 | PASS |
-| Unauthorized caller | 2 | BLOCK — L1 |
-| Prompt injection (in params) | 2 | BLOCK — L2 |
-| Constraint violation (amount, env, type, category) | 4 | BLOCK — L9 |
-| Denied / out-of-scope tool | 4 | BLOCK — L9 |
-| Conditional policy violation (out-of-hours, weekend) | 4 | BLOCK — L6 |
-| Duplicate / replay | 2 | BLOCK — L4 |
+| Unauthorized caller | 2 | BLOCK — identity |
+| Prompt injection (in params) | 2 | BLOCK — injection |
+| Constraint violation (amount, env, type, category) | 4 | BLOCK — scope |
+| Denied / out-of-scope tool | 4 | BLOCK — scope |
+| Conditional policy violation (out-of-hours, weekend) | 4 | BLOCK — policy |
+| Duplicate / replay | 2 | BLOCK — memory |
 
 Each case carries ground truth: the expected decision (PASS/BLOCK) and, for
 blocks, the layer that *should* be responsible (the first blocking gate in
-pipeline order L1→L2→L9→L6→L4).
+pipeline order identity → injection → scope → policy → memory).
 
 **Controlled variables.** Base context (caller, hour, weekday) is held fixed
 for the core cases. Cases exercising identity and policy blocks use variant
@@ -68,12 +68,12 @@ exactly as specified.
 
 ![Responsible gate per blocked action](out/fig1_layer_attribution.png)
 
-Layer attribution reflects the three-tier pipeline design: scope (L9) owns all
+Layer attribution reflects the three-tier pipeline design: scope owns all
 authorization — static deny-list enforcement, in-scope membership, and parameter
-constraints — while policy (L6) owns only conditional and transient rules
+constraints — while policy owns only conditional and transient rules
 (business hours, weekends, rate limits) that apply after scope has already
 permitted the action. Denied and out-of-scope tools are therefore correctly
-attributed to L9, not L6.
+attributed to scope, not policy.
 
 **3. Audit completeness — 24/24.** Every action, whether passed or blocked,
 produced exactly one audit row. No action bypassed the log.
@@ -110,9 +110,9 @@ findings.
   surfaces capture what is sent through them, not that Zink catches real-world
   adversarial agent behaviour. Coverage against an adaptive adversary is out of
   scope and unmeasured.
-- **Injection detection is regex-based (L2).** Precision/recall against a
-  motivated adversary is not characterised here; L2 is defence-in-depth, not the
-  primary control. The primary control is action-boundary gating (L6/L9).
+- **Injection detection is regex-based (injection layer).** Precision/recall against a
+  motivated adversary is not characterised here; injection is defence-in-depth, not the
+  primary control. The primary control is action-boundary gating (scope and policy).
 - **Determinism is scoped to the control-plane decision**, not the wrapped tool's
   output, which remains whatever the tool is.
 - **Single process, single store.** Multi-process and multi-agent delegation are
