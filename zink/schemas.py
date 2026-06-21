@@ -64,14 +64,27 @@ class ValidationResult:
     def from_approve(cls,trace:dict[str,dict])->ValidationResult:
         return cls(approval=True,reason="approved",layer_trace=trace)
     
-CONSTRAINT_OPERATORS = frozenset({"eq", "neq", "gte", "gt", "lte", "lt", "contains", "in", "not_in", "not_contains", "exists"})
+class ConstraintOperator(str, Enum):
+    eq          = "eq"
+    neq         = "neq"
+    gte         = "gte"
+    gt          = "gt"
+    lte         = "lte"
+    lt          = "lt"
+    contains    = "contains"
+    in_         = "in"
+    not_in      = "not_in"
+    not_contains = "not_contains"
+    exists      = "exists"
+
+CONSTRAINT_OPERATORS = frozenset(o.value for o in ConstraintOperator)
 VALID_LAYERS = {
     "identity", "injection", "intent", "memory", "data", "policy", "scope"
 }
 
 class Constraint(BaseModel):
     param: str
-    operator: str
+    operator: ConstraintOperator
     value: Any
 
     @field_validator("param")
@@ -80,16 +93,6 @@ class Constraint(BaseModel):
         if not v.strip():
             raise ValueError("Constraint param must not be empty")
         return v.strip()
-    
-    @field_validator("operator")
-    @classmethod
-    def operator_valid(cls, v: str)-> str:
-        if v not in CONSTRAINT_OPERATORS:
-            raise ValueError(
-                f"Constraint operator {v!r} is invalid "
-                f"Must be one of the {','.join(sorted(CONSTRAINT_OPERATORS))}"
-            )
-        return v 
     
 class ScopeEntry(BaseModel):
     action: str
@@ -137,13 +140,18 @@ class DedupConfig(BaseModel):
     identity_params: list[str]
     ttl_seconds: int = 86400
 
+class TrustLevel(str, Enum):
+    low    = "low"
+    medium = "medium"
+    high   = "high"
+
 class AgentConfig(BaseModel):
     model_config = {"extra": "ignore"}
 
     agent: str = ""
     extends: Optional[str] = None
     role: str = ""
-    trust_level: str = "low"
+    trust_level: TrustLevel = TrustLevel.low
     default_layers: list[str]         = []
     scope:          list[ScopeEntry]  = []
     denied:         list[DeniedEntry] = []
@@ -163,14 +171,6 @@ class AgentConfig(BaseModel):
             )
         return v
     
-    @field_validator("trust_level")
-    @classmethod
-    def trust_level_valid(cls, v: str) -> str:
-        valid = {"low", "medium", "high"}
-        if v not in valid:
-            raise ValueError(f"trust_level must be one of {sorted(valid)}, got {v!r}")
-        return v
-        
     @field_validator("default_layers")
     @classmethod
     def valid_layer(cls,v:list[str])-> list[str]:
