@@ -8,11 +8,11 @@ role: infrastructure_provisioner
 trust_level: medium
 
 default_layers:
-  - l1_identity
-  - l2_injection
-  - l4_memory
-  - l6_policy
-  - l9_scope
+  - identity
+  - injection
+  - memory
+  - policy
+  - scope
 
 identity:
   require_caller: true

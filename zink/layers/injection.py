@@ -3,7 +3,7 @@ from zink.schemas import ValidationRequest, LayerResult, LayerStatus
 from zink.layers.base import Layer
 
 class InjectionDetect(Layer):
-    name = "l2_injection"
+    name = "injection"
 
     def __init__(self, custom_patterns: list[str] = None, context_field: str = "prompt_text"):
         """

@@ -3,7 +3,7 @@ from zink.layers.base import Layer
 from fnmatch import fnmatch
 
 class ScopeCheck(Layer):
-    name = "l9_scope"
+    name = "scope"
 
     def __init__(self, agent_cfg: AgentConfig):
         self._scope = agent_cfg.scope

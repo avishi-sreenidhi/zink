@@ -66,7 +66,7 @@ class ValidationResult:
     
 CONSTRAINT_OPERATORS = frozenset({"eq", "neq", "gte", "gt", "lte", "lt", "contains", "in", "not_in", "not_contains", "exists"})
 VALID_LAYERS = {
-    "l1_identity", "l2_injection", "l3_intent", "l4_memory", "l5_data", "l6_policy", "l9_scope"
+    "identity", "injection", "intent", "memory", "data", "policy", "scope"
 }
 
 class Constraint(BaseModel):

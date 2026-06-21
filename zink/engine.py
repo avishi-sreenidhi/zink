@@ -19,11 +19,11 @@ from zink.schemas import AgentConfig, ValidationRequest, ValidationResult, build
 from zink.store.sqlite import ZinkStore
 from zink.audit.logger import AuditLogger
 from zink.layers.base import Layer
-from zink.layers.l1_identity import IdentityCheck
-from zink.layers.l2_injection import InjectionDetect
-from zink.layers.l4_memory import MemoryGuard
-from zink.layers.l6_policy import PolicyEnforcer
-from zink.layers.l9_scope import ScopeCheck
+from zink.layers.identity import IdentityCheck
+from zink.layers.injection import InjectionDetect
+from zink.layers.memory import MemoryGuard
+from zink.layers.policy import PolicyEnforcer
+from zink.layers.scope import ScopeCheck
 
 
 class ZinkEngine:
@@ -37,11 +37,11 @@ class ZinkEngine:
 
     def _build_layers(self) -> list[Layer]:
         registry = {
-            "l2_injection": lambda: InjectionDetect(),
-            "l9_scope":     lambda: ScopeCheck(self._cfg),
-            "l1_identity": lambda: IdentityCheck(self._cfg),
-            "l6_policy":   lambda: PolicyEnforcer(self._cfg, self._store),
-            "l4_memory":   lambda: MemoryGuard(self._cfg, self._store),
+            "injection": lambda: InjectionDetect(),
+            "scope":     lambda: ScopeCheck(self._cfg),
+            "identity":  lambda: IdentityCheck(self._cfg),
+            "policy":    lambda: PolicyEnforcer(self._cfg, self._store),
+            "memory":    lambda: MemoryGuard(self._cfg, self._store),
         }
         from zink.config.parser import ConfigError
         layers = []

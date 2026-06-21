@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """
-zink/layers/l1_identity.py
---------------------------
-L1 Identity — first gate layer.
+zink/layers/identity.py
+-----------------------
+Identity — first gate layer.
 
 Extracts caller_id from request context.
 Checks against allowed_callers list.
@@ -26,7 +26,7 @@ from zink.layers.base import Layer
 
 
 class IdentityCheck(Layer):
-    name = "l1_identity"
+    name = "identity"
     phase = 1
 
     def __init__(self, agent_cfg: AgentConfig) -> None:

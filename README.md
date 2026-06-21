@@ -17,7 +17,7 @@ If you wire Zink into a real agent, any LangChain-compatible LLM works (OpenAI, 
 
 Zink is a middleware library that sits between an AI agent and the tools it can call. Every time an agent tries to do something, Zink checks whether that action is allowed before it executes. If it's allowed, the tool fires. If it isn't, it's blocked with a clear reason and logged.
 
-No changes to your agent code. No retraining. One integration point.
+Minimal changes required. No retraining, one integration point. You wrap your tools once; your agent's logic is untouched and keeps the same call signature.
 
 ```python
 import datetime
@@ -40,7 +40,7 @@ def approve_expense(expense_id: str, amount: float, category: str) -> dict:
 
 ## Why it exists
 
-Zink is pre-execution: the agent decides what to do, Zink decides if it's allowed before anything touches a real system. Same input, same config, same result.
+Zink is pre-execution, governs the boundary: the agent decides what to do, Zink decides if it's allowed before anything touches a real system. 
 
 ---
 
@@ -106,7 +106,7 @@ output scanner    L2 on the return value too
 audit             cryptographic hash-chained entry written to SQLite
 ```
 
-Every decision, blocked or approved, is written to a hash-chained audit log. Tamper with any entry and the chain breaks at that point forward.
+Every decision (blocked or approved), is written to a hash-chained audit log. Tampering of any entry and the chain breaks at that point forward.
 
 ---
 
@@ -148,9 +148,33 @@ Every layer is opt-in. Start with two. Add more when you need them.
 
 ---
 
+## Governance mapping
+
+What each mechanism does, and which governance surface it answers to. Coverage is
+stated honestly: *full* (shipped and enforced), *partial* (shipped but limited),
+*planned* (on the roadmap). The full regulatory cross-walk lives in the whitepaper;
+this is the condensed view.
+
+| Zink mechanism | Governance function | Frameworks | OWASP ASI (2026) | Coverage |
+|---|---|---|---|---|
+| Tool-wrapping interception | Deterministic action gating at the boundary | EU Art 9; NIST GOVERN | ASI-02 Tool Misuse | Full |
+| L9 Scope + param constraints | Least-privilege enforcement | EU Art 9; ISO 42001 | ASI-02 Tool Misuse | Full |
+| L6 Policy (default-deny, rate limits) | Business-rule + cumulative enforcement | EU Art 9; NIST MANAGE | ASI-02 Tool Misuse | Full (rules); partial (cumulative) |
+| L1 Identity (allowlist) | Caller authorization | EU Art 9; NIST GOVERN | ASI-03 Identity & Privilege Abuse | Partial (allowlist, not cryptographic) |
+| L2 Injection (regex patterns) | Input/output attack detection | EU Art 9 | ASI-01 Goal Hijack | Partial (pattern-based) |
+| L4 Memory (dedup) | Replay / duplicate suppression | EU Art 9 | — | Partial |
+| Hash-chained audit log | Tamper-evident record of every action | EU Art 12/19, 72; NIST MEASURE/MANAGE; ISO 42001 | Cross-cutting (traceability) | Full |
+| YAML policy-as-artifact | Versioned, human-readable risk policy | EU Art 9; NIST GOVERN; ISO 42001 | — | Full |
+| Zink Studio | Human oversight + accessible authoring | EU Art 13/14 | — | Planned |
+| L3 Intent / L5 Data / L8 Anomaly | Intent, data governance, behavioural drift | EU Art 9, 72 | ASI-01 | Planned |
+
+*ASI identifiers reference the OWASP Top 10 for Agentic Applications (2026). Confirm exact identifiers against the published list before external citation.*
+
+---
+
 ## Audit log
 
-Every call writes to a SQLite-backed audit log. Entries are hash-chained so any tampering is detectable.
+Every call writes to a SQLite-backed audit log. Entries are hash-chained — each entry's hash covers the previous one — so any tampering is detectable and localisable to the row it occurred on.
 
 ```python
 from zink.audit.logger import AuditLogger
@@ -159,10 +183,16 @@ from zink.store.sqlite import ZinkStore
 store = ZinkStore("zink_store.db")
 logger = AuditLogger(store)
 
-print(logger.verify_chain())  # True if untampered
+logger.verify_chain()   # True on an untouched log
+# edit any stored row by hand, then:
+logger.verify_chain()   # False — and the break points to the altered row
 ```
 
 The log persists across process restarts. Rate counters and dedup hashes do too.
+
+This is verified empirically in [`study/`](study/report.md): across an 18-case
+suite, every action produced exactly one log row, the clean chain verified, and a
+single-field edit to one row broke verification at that exact row.
 
 ---
 
@@ -185,15 +215,32 @@ The examples persist state in SQLite. If you re-run within an hour, the dedup la
 
 ---
 
+## Empirical study
+
+`study/` instruments both example agents through an 18-case labelled suite and
+measures what Zink's surfaces actually capture. Reproduce in two commands:
+
+```bash
+python -m study.run_study      # -> study/out/results.json (+ console summary)
+python -m study.figures        # -> study/out/fig1..3.png
+```
+
+Headline results: 18/18 decisions correct, every action attributed to the correct
+gate, 18/18 actions logged, tamper localised to the altered row, and 10/10
+independent runs producing an identical decision sequence. Full method, figures,
+and limitations in [`study/report.md`](study/report.md).
+
+---
+
 ## Design decisions
 
 **Deterministic.** No ML in the governance pipeline. Same input, same config, same result. Reproducible and auditable.
 
 **Framework agnostic.** Works with LangGraph or raw Python. Zink governs tool calls, not frameworks. CrewAI and AutoGen implementations are planned.
 
-**Domain agnostic.** Same engine governs HR workflows, cloud infrastructure, financial transactions, and healthcare systems. Only the config changes.
+**Domain agnostic.** The engine makes no domain assumptions — only the config changes. The included examples govern expense approval and cloud-infrastructure provisioning.
 
-**Zero agent changes.** Tools are wrapped at setup time and look identical to the original. The agent never knows Zink is there.
+**Minimal integration.** Tools are wrapped at setup time and keep the same call signature; the agent's logic is untouched.
 
 **Opt-in complexity.** Start with scope enforcement only. Add identity, memory, policy as you need them.
 
@@ -205,4 +252,4 @@ Apache-2.0
 
 ---
 
-Built by Avishi. 
+Built by Avishi.

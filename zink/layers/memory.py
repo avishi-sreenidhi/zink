@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """
-zink/layers/l4_memory.py
-------------------------
-L4 Memory — deduplication and idempotency enforcement.
+zink/layers/memory.py
+---------------------
+Memory — deduplication and idempotency enforcement.
 
 Hashes (agent + resource + identity_params) to produce a stable
 fingerprint for a logical request. Blocks if the same fingerprint
@@ -31,7 +31,7 @@ from zink.layers.base import Layer
 
 
 class MemoryGuard(Layer):
-    name = "l4_memory"
+    name = "memory"
     phase = 1
 
     def __init__(self, agent_cfg: AgentConfig, store: ZinkStore) -> None:

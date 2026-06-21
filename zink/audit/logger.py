@@ -30,7 +30,7 @@ class AuditLogger:
         ts = datetime.now(timezone.utc).isoformat()
 
         caller = None
-        l1 = result.layer_trace.get("l1_identity")
+        l1 = result.layer_trace.get("identity")
         if l1 and l1.get("enrichments"):
             caller = l1["enrichments"].get("caller")
 
