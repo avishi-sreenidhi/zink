@@ -15,8 +15,8 @@ zink_trace.jsonl
 *.db-wal
 *.jsonl
 red_team_logs/
-docs/
 pyrightconfig.json
 .claude/
 tests/
 devlog.md
+docs/whitepaper.md
