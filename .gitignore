@@ -11,6 +11,8 @@ hr_pipeline.xlsx
 .pytest_cache/
 zink_trace.jsonl
 *.db
+*.db-shm
+*.db-wal
 *.jsonl
 red_team_logs/
 docs/
