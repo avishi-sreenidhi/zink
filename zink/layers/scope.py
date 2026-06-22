@@ -25,7 +25,7 @@ class ScopeCheck(Layer):
             
         for entry in self._scope:
             if fnmatch(request.action, entry.action) and fnmatch(request.resource, entry.resource):
-                return self._check_constraints(request.params, entry.constraints)
+                return self._check_constraints(request.params, request.context, entry.constraints)
             
         # rest not in scope
 
@@ -50,14 +50,32 @@ class ScopeCheck(Layer):
         if operator == "exists":      return actual is not None
         return False
 
-    def _check_constraints(self, params: dict, constraints: list)-> LayerResult:
+    def _resolve_expected(self, c, root: dict):
+        vf = getattr(c, "value_from", None)
+        if not vf:
+            return c.value
+        cur = root
+        for part in vf.split("."):
+            cur = cur[part]
+        return cur
+
+    def _check_constraints(self, params: dict, context: dict, constraints: list)-> LayerResult:
+        root = {"context": context or {}, "params": params or {}}
         for c in constraints:
             actual = params.get(c.param)
-            if not self._apply_operator(actual, c.operator, c.value):
+            try:
+                expected = self._resolve_expected(c, root)
+            except (KeyError, TypeError):
                 return LayerResult(
                     status=LayerStatus.BLOCK,
                     layer=self.name,
-                    reason=f"Param '{c.param}' failed constraint: {c.operator} {c.value!r} (got {actual!r})"
+                    reason=f"Param '{c.param}': value_from '{c.value_from}' not resolvable (fail-closed)"
+                )
+            if not self._apply_operator(actual, c.operator, expected):
+                return LayerResult(
+                    status=LayerStatus.BLOCK,
+                    layer=self.name,
+                    reason=f"Param '{c.param}' failed constraint: {c.operator} {expected!r} (got {actual!r})"
                 )
         return LayerResult(status=LayerStatus.PASS, layer=self.name)
 

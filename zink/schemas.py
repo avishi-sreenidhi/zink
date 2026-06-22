@@ -85,7 +85,14 @@ VALID_LAYERS = {
 class Constraint(BaseModel):
     param: str
     operator: ConstraintOperator
-    value: Any
+    value: Any = None
+    value_from: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _not_both_value_sources(self):
+        if self.value is not None and self.value_from is not None:
+            raise ValueError("Constraint cannot set both 'value' and 'value_from'")
+        return self
 
     @field_validator("param")
     @classmethod
