@@ -18,26 +18,6 @@ Core governance pipeline working end-to-end.
 
 ---
 
-## Next — v0.3
-
-Behavioral intelligence and the research contribution.
-
-- **Intent** — semantic coherence of params (score vs decision contradictions)
-- **Data** — field-level ACL, PII stripping, egress control
-- **Anomaly** — behavioral drift detection across sessions, FLAG only
-- **Fingerprint Engine** — multi-dimensional threat scoring across behavioral dimensions for statistical anomaly detection
-- Dashboard — real-time visibility into governance decisions
-
-Production hardening and multi-process deployment.
-
-- Identity upgrade to JWT / HMAC for cryptographic agent identity
-- Multi-process backing store (Redis / Postgres)
-- Async support throughout (`_arun` on GovernedTool)
-- Plain callable adapter — govern any Python function, not just LangChain tools
-- PyPI publish under a unique package name
-
----
-
 ## Layers
 
 Execution order matches `default_layers` in the config.
