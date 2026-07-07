@@ -7,12 +7,12 @@ No LLM — simulates the tool calls an LLM agent would make,
 including the bad ones Zink is designed to catch.
 
 Covers all six governance surfaces:
-    L1 Identity   — caller must be expense_system or hr_portal
-    L2 Injection  — expense description carrying prompt injection
-    L4 Memory     — duplicate expense submission
-    L6 Policy     — business hours, rate limiting
-    L9 Scope      — out-of-scope tool, constraint violation (amount > 5000)
-    L7 Audit      — every call logged, hash-chained
+    Identity   — caller must be expense_system or hr_portal
+    Injection  — expense description carrying prompt injection
+    Memory     — duplicate expense submission
+    Policy     — business hours, rate limiting
+    Scope      — out-of-scope tool, constraint violation (amount > 5000)
+    Audit      — every call logged, hash-chained
 
 Run:
     python -m examples.expense_agent.agent
